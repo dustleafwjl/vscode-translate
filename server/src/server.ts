@@ -75,9 +75,8 @@ connection.onInitialized(() => {
 let last: Map<string, Hover> = new Map();
 connection.onHover(async (position: TextDocumentPositionParams) => {
 	let hover = await commentHandler.getComment(position)
-	console.log(hover)
 	return {
-		contents: [`[Dustleaf Translate] Goolge`, '\r \n' + 'ddddd']
+		contents: [`[Dustleaf Translate] Goolge`, '\r \n' + await commentHandler.tranlate(hover?.contents as string) ]
 	}
 });
 

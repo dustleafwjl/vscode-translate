@@ -8,6 +8,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/google-translate-api": "^2.3.0",
+    "@types/request": "^2.48.4",
+    "google-translate-api": "^2.3.0",
     "vscode-languageserver": "^5.2.1"
-  }
+  },
+  "devDependencies": {}
 }

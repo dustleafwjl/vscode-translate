@@ -7,7 +7,8 @@ import {
 	LanguageClientOptions,
 	ServerOptions,
 	TransportKind,
-	TextDocumentPositionParams
+	TextDocumentPositionParams,
+    Range
 } from 'vscode-languageclient';
 
 let client: LanguageClient;
@@ -53,8 +54,13 @@ export async function activate(context: ExtensionContext) {
 	// Start the client. This will also launch the server
 	client.start();
 
-	await client.onReady();
-	client.onRequest<object, TextDocumentPositionParams>('selectContains', (docPosition: TextDocumentPositionParams) => {
+    await client.onReady();
+    
+    interface ICommentBlock {
+        contents: string,
+        range: Range
+    }
+	client.onRequest<ICommentBlock, TextDocumentPositionParams>('selectContains', (docPosition: TextDocumentPositionParams) => {
 		let editor = window.activeTextEditor;
         //有活动editor，并且打开文档与请求文档一致时处理请求
         if (editor && editor.document.uri.toString() === docPosition.textDocument.uri) {
@@ -66,11 +72,10 @@ export async function activate(context: ExtensionContext) {
             if (selection) {
                 return {
                     range: selection,
-                    comment: editor.document.getText(selection)
+                    contents: editor.document.getText(selection)
                 };
             }
         }
-
         return null;
 	})
 }
