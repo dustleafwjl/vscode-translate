@@ -14,13 +14,15 @@
 	],
 	"main": "./client/out/extension",
 	"contributes": {
-		"commands": [
-		]
+		"commands": []
 	},
 	"scripts": {
 		"vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run compile",
-		"compile": "tsc -b",
-		"watch": "tsc -b -w",
+		"compile:client": "tsc -p ./client/tsconfig.json",
+		"compile:server": "tsc -p ./server/tsconfig.json",
+		"watch:client": "tsc -w -p ./client/tsconfig.json",
+		"watch:server": "tsc -w -p ./server/tsconfig.json",
+		"compile": "npm run compile:client && npm run compile:server",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
 	},
 	"devDependencies": {
@@ -30,8 +32,9 @@
 		"@types/vscode": "^1.41.0",
 		"glob": "^7.1.5",
 		"mocha": "^6.2.2",
-		"typescript": "^3.6.4",
 		"tslint": "^5.20.0",
-		"vscode-test": "^1.2.2"
+		"typescript": "^3.6.4",
+		"vscode-test": "^1.2.2",
+		"vscode-textmate": "^4.4.0"
 	}
 }

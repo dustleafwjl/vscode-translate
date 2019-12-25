@@ -1,6 +1,6 @@
 
 import * as path from 'path';
-import { workspace, ExtensionContext, commands, window, Selection, Hover, Position } from 'vscode';
+import { workspace, ExtensionContext, commands, window, Selection, Hover, Position, env, extensions } from 'vscode';
 
 import {
 	LanguageClient,
@@ -10,6 +10,7 @@ import {
 	TextDocumentPositionParams,
     Range
 } from 'vscode-languageclient';
+import { IGrammarExtensions, ITMLanguageExtensionPoint } from './types';
 
 let client: LanguageClient;
 
@@ -20,7 +21,7 @@ export async function activate(context: ExtensionContext) {
 	);
 	// The debug options for the server
 	// --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
-	let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
+	let debugOptions = { execArgv: ['--nolazy', '--inspect=16009'] };
 
 	// If the extension is launched in debug mode then the debug server options are used
 	// Otherwise the run options are used
@@ -33,10 +34,36 @@ export async function activate(context: ExtensionContext) {
 		}
 	};
 
+	// 将vscode中的language拿出来，传如server端
+	let extAll = extensions.all;
+    let languageId = 2;
+    let grammarExtensions: IGrammarExtensions[] = [];
+    let canLanguages: string[] = [];
+    extAll.forEach(extension => {
+        if (!(extension.packageJSON.contributes && extension.packageJSON.contributes.grammars)) return;
+        let languages: ITMLanguageExtensionPoint[] = [];
+        (extension.packageJSON.contributes && extension.packageJSON.contributes.languages || []).forEach((language: any) => {
+            languages.push({
+                id: languageId++,
+                name: language.id
+            });
+        })
+        grammarExtensions.push({
+            languages: languages,
+            value: extension.packageJSON.contributes && extension.packageJSON.contributes.grammars,
+            extensionLocation: extension.extensionPath
+        });
+        canLanguages = canLanguages.concat(extension.packageJSON.contributes.grammars.map((g: any) => g.language));
+    });
+
 	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {
 		// Register the server for plain text documents
+		// revealOutputChannelOn: 4,
 		documentSelector: [{ scheme: 'file', language: 'typescript' }],
+		initializationOptions: {
+            grammarExtensions
+        },
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace
 			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
@@ -51,9 +78,11 @@ export async function activate(context: ExtensionContext) {
 		clientOptions
 	);
 
+
+	console.log('extensions', extensions)
+	console.log("grammer", extensions.all)
 	// Start the client. This will also launch the server
 	client.start();
-
     await client.onReady();
     
     interface ICommentBlock {

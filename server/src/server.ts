@@ -30,7 +30,7 @@ let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
 connection.onInitialize((params: InitializeParams) => {
 	let capabilities = params.capabilities;
-	commentHandler = new CommentHandler(documents, connection)
+	commentHandler = new CommentHandler(params.initializationOptions.grammarExtensions, documents, connection)
 	// Does the client support the `workspace/configuration` request?
 	// If not, we will fall back using global settings
 	hasConfigurationCapability = !!(
