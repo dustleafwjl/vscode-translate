@@ -1,4 +1,5 @@
 import { Range } from 'vscode-languageserver';
+import { StackElement, IToken } from 'vscode-textmate';
 
 export interface ICommentBlock {
 	contents: string,
@@ -43,4 +44,18 @@ export interface IGrammarExtensions {
     value: ITMSyntaxExtensionPoint[];
     extensionLocation: string;
     languages: ITMLanguageExtensionPoint[];
+}
+
+
+export interface ITokenState {
+    startState: StackElement | null;
+    tokens: IToken[];
+    endState: StackElement | null;
+}
+
+export interface ITokenAndText {
+    startIndex: number,
+    endIndex: number,
+    scopes: string[],
+    text: string
 }
