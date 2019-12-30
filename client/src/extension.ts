@@ -62,7 +62,8 @@ export async function activate(context: ExtensionContext) {
 		// revealOutputChannelOn: 4,
 		documentSelector: [{ scheme: 'file', language: 'typescript' }],
 		initializationOptions: {
-            grammarExtensions
+			grammarExtensions,
+			appRoot: env.appRoot
         },
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace

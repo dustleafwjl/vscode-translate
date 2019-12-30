@@ -55,6 +55,7 @@ ework 2.0 SDK；2) 安装 Microsoft Visual Studio 2005；或 3) 如果将该组�
 
 写好launch.json和tasks.json
 
+
 ---
 
 
@@ -84,3 +85,30 @@ const registry =new Registry({
 #### 解决方案：
 
 传入第二个参数，参数为文件路径
+
+
+
+---
+
+问题描述：
+在使用vscode-textmate，在使用IGarmmar对象的tokenizeLine方法时出现
+
+
+```
+[Error - 下午12:21:20] Request textDocument/hover failed.
+  Message: Request textDocument/hover failed with message: The module '\\?\e:\js_workspace\vscode-translate\server\node_modules\oniguruma\build\Release\onig_scanner.node'
+was compiled against a different Node.js version using
+NODE_MODULE_VERSION 64. This version of Node.js requires
+NODE_MODULE_VERSION 73. Please try re-compiling or re-installing
+the module (for instance, using `npm rebuild` or `npm install`).
+```
+参考链接：
+
+https://electronjs.org/docs/tutorial/using-native-node-modules
+https://github.com/Microsoft/vscode-textmate/issues/23
+https://juejin.im/post/5c46ab47e51d45522b4f55b1
+
+
+解决方案：
+
+https://github.com/intellism/vscode-comment-translate/issues/34

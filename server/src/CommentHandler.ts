@@ -36,6 +36,7 @@ export default class CommentHandler {
 		console.log(block)
 		if(!block) {
 			block = commentParse.getTextByPosition(position)
+			console.log(block)
 		}
 		return {
 			contents: block.contents

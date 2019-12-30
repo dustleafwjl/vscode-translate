@@ -1,10 +1,32 @@
-import { Registry, parseRawGrammar, INITIAL, IGrammar, IRawGrammar } from 'vscode-textmate'
+import { Registry, parseRawGrammar, IOnigLib, IGrammar, IRawGrammar, INITIAL } from 'vscode-textmate'
 import CommentParse from './CommentPares'
 import fs from 'fs'
 import { IGrammarExtensions } from '../types'
 import GarmmarLib from './GarmmarLib'
 import path from 'path'
+import * as onigasm from 'onigasm';
 
+
+async function doLoadOnigasm(): Promise<IOnigLib> {
+    const [wasmBytes] = await Promise.all([
+        loadOnigasmWASM()
+    ]);
+    
+    // debugger;
+
+	await onigasm.loadWASM(wasmBytes);
+	return {
+		createOnigScanner(patterns: string[]) { return new onigasm.OnigScanner(patterns); },
+		createOnigString(s: string) { return new onigasm.OnigString(s); }
+	};
+}
+
+async function loadOnigasmWASM(): Promise<ArrayBuffer> {
+    let indexPath:string = require.resolve('onigasm');
+    const wasmPath = path.join(indexPath, '../onigasm.wasm');
+	const bytes = await fs.promises.readFile(wasmPath);
+	return bytes.buffer;
+}
 
 
 /**
@@ -12,19 +34,23 @@ import path from 'path'
  */
 export class TextMateService {
     private _grammarlib: GarmmarLib
-    private _grammarCache: Map<number, IGrammar>
+    private _grammarCache: Map<string, IGrammar> = new Map()
     constructor(grammarExtensions: IGrammarExtensions[]) {
         this._grammarlib = new GarmmarLib(grammarExtensions)
     }
 
     // 根据传入的languageId创造一个grammar
     public async createGrammar(languageId: string): Promise<IGrammar> {
+        if(this._grammarCache.get(languageId)) {
+            return this._grammarCache.get(languageId)
+        }
         return this._createGrammar(languageId)
     }
     private async _createGrammar(languageId: string): Promise<IGrammar> {
         const { scopeName: gScopeName, location, path: uri } = this._grammarlib.getGarmmarById(languageId)
         const grammarLocation = path.join(location, uri);
         const registry = new Registry({
+            getOnigLib: doLoadOnigasm,
             loadGrammar: (scopeName: string) => {
                 if(scopeName === gScopeName) {
                     return new Promise<IRawGrammar>((resolve, reject) => {
@@ -44,6 +70,7 @@ export class TextMateService {
             }
         });
         let garmmar = await registry.loadGrammar(gScopeName)
+        this._grammarCache.set(languageId, garmmar)
         return garmmar
     }
 }

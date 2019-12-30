@@ -38,8 +38,6 @@ export default class CommentParse {
             state = this._lines[linesLength - 1].endState
         }
         // 如果传入的lineNumber小于linesLength，不进行操作，直接返回
-        console.log("grammar1")
-        console.log(this._grammar)
         for(let i = linesLength; i <= lineNumber; i ++) {
             let result = this._grammar.tokenizeLine(this.fileText[i], state)
             this._lines.push({
@@ -145,9 +143,7 @@ export default class CommentParse {
                 tokenIndex = i
             }
         }
-        console.log("step1")
         const { startIndex, endIndex, text , scopes} = this._parseScope(data.tokens, line, tokenIndex)
-        console.log("step2")
         if(TokenConversion.isBaseTranslate(scopes)) {
             // 基础变量，只需要一个token
             let range = Range.create({
@@ -162,7 +158,6 @@ export default class CommentParse {
                 range
             }
         }
-        console.log("step3")
         if(TokenConversion.isStringCommentTranslate) {
             return this._multiScope({
                 dataTokens: data.tokens,
@@ -170,7 +165,6 @@ export default class CommentParse {
                 positionLine: line
             }, TokenConversion.isCommentTranslate, line, line)
         }
-        console.log("step4")
         if(TokenConversion.isCommentTranslate(scopes)) {
             return this._multiScope({
                 dataTokens: data.tokens,
@@ -179,7 +173,7 @@ export default class CommentParse {
             }, TokenConversion.isCommentTranslate, this.fileText.length - 1, 0, TokenConversion.isSkipCommentTranslate)
         }
         return {
-            contents: "my promise is true"
+            contents: ""
         }
     }
 }
