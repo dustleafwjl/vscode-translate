@@ -76,8 +76,13 @@ let last: Map<string, Hover> = new Map();
 connection.onHover(async (position: TextDocumentPositionParams) => {
 	let hover = await commentHandler.getComment(position)
 	return {
-		contents: [`[Dustleaf Translate] Goolge`, '\r \n' + await commentHandler.tranlate(hover?.contents as string) ]
+		contents: [`[Dustleaf Translate]`, '\r \n' + await commentHandler.translate(hover?.contents as string, {from: "en", to: "zh-CN"}) ]
 	}
+});
+
+connection.onRequest('translate', (text: string) => {
+	if (!commentHandler) return null;
+	return commentHandler.translate(text, {from: "zh-CN", to: "en"});
 });
 
 documents.listen(connection);

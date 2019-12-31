@@ -11,6 +11,7 @@ import {
     Range
 } from 'vscode-languageclient';
 import { IGrammarExtensions, ITMLanguageExtensionPoint } from './types';
+import { variableConversion } from './commands';
 
 let client: LanguageClient;
 
@@ -34,7 +35,7 @@ export async function activate(context: ExtensionContext) {
 		}
 	};
 
-	// 将vscode中的language拿出来，传如server端
+	// 将vscode中的language拿出来，传入server端
 	let extAll = extensions.all;
     let languageId = 2;
     let grammarExtensions: IGrammarExtensions[] = [];
@@ -78,14 +79,13 @@ export async function activate(context: ExtensionContext) {
 		serverOptions,
 		clientOptions
 	);
-
-
-	console.log('extensions', extensions)
-	console.log("grammer", extensions.all)
 	// Start the client. This will also launch the server
 	client.start();
     await client.onReady();
-    
+	
+	// 注册变量转换命令
+	context.subscriptions.push(commands.registerCommand('dustleafComment.variableConversion', variableConversion.bind(null, client)));
+
     interface ICommentBlock {
         contents: string,
         range: Range

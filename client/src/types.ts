@@ -23,3 +23,4 @@ export interface IGrammarExtensions {
     extensionLocation: string;
     languages: ITMLanguageExtensionPoint[];
 }
+

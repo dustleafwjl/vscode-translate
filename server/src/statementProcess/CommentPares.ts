@@ -2,11 +2,38 @@ import { TextDocument, TextDocumentPositionParams, Range } from "vscode-language
 import { ICommentBlock, ITokenState, ITokenAndText } from "../types"
 import { IGrammar, StackElement, IToken } from "vscode-textmate"
 
+export function isUpperCase(ch: string) {
+    return ch >= 'A' && ch <= 'Z'
+}
+
+export function isLowerCase(ch: string) {
+    return ch >= 'a' && ch <= 'z'
+}
+
+export function hasEndMark(ch: string) {
+    let lastLineEndCharacter = ch.substring(ch.length - 1);
+    return lastLineEndCharacter !== '.';
+}
+
 export default class CommentParse {
     private fileText: string[]
     private _lines: ITokenState[] = []
-    constructor(document: TextDocument, private _grammar: IGrammar) {
+    constructor(document: TextDocument, private _grammar: IGrammar, private _multiLineMerge: boolean = false) {
         this.fileText = document.getText().split('\n')
+    }
+    //跨行元素合并
+    private _mergeComment(oldComment: string, newLine: string): string {
+        if (this._multiLineMerge) {
+            let lastLine = oldComment.substring(oldComment.lastIndexOf('\n') + 1);
+            lastLine = lastLine.replace(/^([\/\ \*])*/, '');
+            let currentLine: string = newLine.replace(/^([\/\ \*])*/, '');
+            if (isUpperCase(lastLine) && hasEndMark(lastLine) && isLowerCase(currentLine)) {
+                return oldComment + ' ' + currentLine;
+            }
+        }
+        console.log("merge oldComment", oldComment)
+        console.log("merge newLine", newLine)
+        return oldComment + '\n' + newLine;
     }
     /**
      * 用于将fileText和tokens整合成所需要的格式{ITokenAndText}
@@ -16,7 +43,7 @@ export default class CommentParse {
      */
     private _parseScope(tokens: IToken[], line: number, tokenIndex: number): ITokenAndText {
         let { startIndex, endIndex, scopes } = tokens[tokenIndex]
-        scopes.map(ele => escape(ele)).reverse()
+        scopes = scopes.map(ele => escape(ele)).reverse()
         let text = this.fileText[line].substring(startIndex, endIndex)
         return {
             startIndex,
@@ -63,7 +90,7 @@ export default class CommentParse {
             // 合并当前坐标之前的同类型节点
             for(let line = positionLine, tokens = dataTokens, tIndex = tokenIndex; line >= minLine;) {
                 let index: number
-                for(index = tIndex; index >= 0; index --) {
+                for(index = tIndex - 1; index >= 0; index --) {
                     let res = this._parseScope(tokens, line, index)
                     if (skipContentHandle && skipContentHandle(res.scopes[0])) {
                         continue;
@@ -88,19 +115,20 @@ export default class CommentParse {
             // 合并当前节点之后的同类型节点
             for(let line = positionLine, tokens = dataTokens, tIndex = tokenIndex; line <= maxLine;) {
                 let index: number
-                for(let index = tIndex; index < tokens.length; index ++) {
+                for(index = tIndex + 1; index < tokens.length; index ++) {
                     let res = this._parseScope(tokens, line, index)
                     if (skipContentHandle && skipContentHandle(res.scopes[0])) {
                         continue;
                     }
                     if(handleCheckText(res.scopes)) {
-                        text += res.text
+                        text = text + res.text
                         endIndex = res.endIndex
                         endLine = line
-                    }else {
+                    } else {
                         break
                     }
                 }
+                // 外层循环出口， 和内层for循环公用一个index，当内层循环break之后，外层也break
                 if(index < tokens.length) {
                     break
                 }
@@ -108,12 +136,14 @@ export default class CommentParse {
                 if(line <= maxLine) {
                     let data = this._getTokensAtLine(line)
                     tokens = data.tokens
-                    tIndex = tokens.length
+                    tIndex = -1
                     text = text + '\n'
                 }
             }
             let newText = ''
-            newText = text
+            text.split("\n").forEach(item => {
+                newText = this._mergeComment(newText, item)
+            })
 
             let range = Range.create({
                 character: startIndex,
@@ -158,7 +188,7 @@ export default class CommentParse {
                 range
             }
         }
-        if(TokenConversion.isStringCommentTranslate) {
+        if(TokenConversion.isStringCommentTranslate(scopes)) {
             return this._multiScope({
                 dataTokens: data.tokens,
                 tokenIndex,
@@ -184,11 +214,12 @@ export class TokenConversion {
         const arr = [
             'punctuation.definition.comment',
             'comment.block',
-            'comment.line'
+            'comment.line',
+            'punctuation.whitespace.comment'
         ];
         return scopes.some(scope => {
             return arr.some(item => {
-                return scope.indexOf(item) === 0;
+                return scope.indexOf(item) === 0
             });
         })
     }
@@ -213,7 +244,6 @@ export class TokenConversion {
             'entity',
             'variable',
             'support',
-            // Object表达式支持
             'meta.object-literal.key'
         ];
         return arr.some(item => {
